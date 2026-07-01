@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>起步</title>
+  <style>
+    :root{--base:#f3f0e7;--surface:#fffdf8;--surface2:#f7f4ea;--ink:#24302f;--muted:#6c7876;--line:#e2ddd0;--accent:#0d7d6c;--accent2:#075a4f;--soft:#ddeee9;--reward:#c9891e;--rewardSoft:#f5e8c9;--danger:#a94932;--dangerSoft:#fbe8e3}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(180deg,#faf7ef,var(--base) 58%,#eee9dc);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+    button,textarea{font:inherit}button{cursor:pointer}.app{width:100%;min-height:100vh;display:flex;justify-content:center;padding:20px 14px 42px}.wrap{width:100%;max-width:480px}.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.brand{display:flex;align-items:center;gap:10px}.mark{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:var(--accent);color:white;box-shadow:0 8px 18px -9px rgba(13,125,108,.75)}.name{font-weight:900;font-size:20px}.name span{color:var(--accent)}.chip{border:1px solid var(--line);border-radius:99px;background:rgba(255,253,248,.72);padding:7px 10px;color:var(--muted);font-size:12px;font-weight:800}
+    .panel,.card{background:rgba(255,253,248,.86);border:1.5px solid var(--line);border-radius:20px;padding:22px 18px;box-shadow:0 24px 64px -34px rgba(83,70,42,.48)}h1{font-size:29px;line-height:1.12;margin:0;font-weight:900;letter-spacing:-.01em}.sub{margin:10px 0 0;color:var(--muted);font-size:15px;line-height:1.55}.label{margin:20px 2px 10px;color:var(--muted);font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+    textarea{width:100%;min-height:108px;margin-top:18px;padding:15px 16px;border:1.5px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font-size:16px;line-height:1.5;resize:vertical}textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--soft)}textarea::placeholder{color:#a5aeab}.examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.pill{border:1px solid var(--line);background:var(--surface2);border-radius:99px;padding:8px 10px;color:#53615f;font-size:13px;font-weight:700}.pill:hover{border-color:var(--accent);color:var(--accent2);background:#eef7f4}
+    .coaches{display:grid;gap:9px}.coach{width:100%;display:flex;align-items:center;gap:12px;text-align:left;padding:13px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink)}.coach.on{border-color:var(--accent);background:var(--soft)}.ico{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:var(--surface2);color:var(--accent);font-size:20px;flex:0 0 auto}.cname{display:block;font-weight:900;font-size:15px}.cdesc{display:block;margin-top:2px;color:var(--muted);font-size:13px;line-height:1.35}.options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.seg{min-height:42px;border:1.5px solid var(--line);border-radius:13px;background:var(--surface);color:#53615f;font-weight:900;font-size:13px}.seg.on{border-color:var(--accent);background:var(--soft);color:var(--accent2)}
+    .primary{width:100%;min-height:52px;margin-top:20px;border:0;border-radius:15px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:900;font-size:16px;box-shadow:0 12px 24px -12px rgba(13,125,108,.75)}.primary:disabled{opacity:.55;cursor:default}.note{margin-top:12px;color:var(--muted);font-size:12.5px;line-height:1.45}.err{margin-top:12px;border:1px solid #edc4bb;background:var(--dangerSoft);color:var(--danger);border-radius:13px;padding:12px 13px;font-size:13.5px;line-height:1.45}
+    .top{display:flex;align-items:center;gap:12px}.back,.iconbtn{width:40px;height:40px;display:grid;place-items:center;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted)}.prog{flex:1}.progt{display:flex;justify-content:space-between;margin-bottom:7px;color:var(--muted);font-size:12.5px;font-weight:900}.progt b{color:var(--accent2)}.bar{height:8px;border:1px solid var(--line);background:var(--surface2);border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#18a891);border-radius:99px;transition:width .3s}.card{margin-top:16px}.now{display:inline-flex;align-items:center;border-radius:99px;background:var(--rewardSoft);color:#9a6916;padding:6px 11px;font-size:11.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}.step{margin:16px 0 0;font-size:26px;line-height:1.18;font-weight:900}.how{margin:10px 0 0;color:#4f5d5a;font-size:15.5px;line-height:1.58}.cheer{display:flex;gap:9px;align-items:flex-start;margin-top:16px;padding:12px 13px;border-radius:14px;background:var(--soft);color:var(--accent2);font-size:14.5px;font-weight:800;line-height:1.45}
+    .timer{margin-top:17px;padding-top:17px;border-top:1px solid var(--line)}.tstart{width:100%;min-height:46px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface2);color:var(--ink);font-weight:900}.trun{display:flex;align-items:center;gap:10px}.tnum{flex:1;font-size:31px;font-weight:900;font-variant-numeric:tabular-nums}.tnum.done{color:var(--reward)}.actions{display:grid;gap:9px;margin-top:18px}.done{min-height:50px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-weight:900}.row{display:grid;grid-template-columns:1fr 106px;gap:9px}.ghost{min-height:43px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:#62706d;font-weight:900;font-size:13.5px}.ghost:hover{border-color:var(--reward);background:var(--rewardSoft);color:#946414}.finish{text-align:center}.pop{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 16px;border-radius:18px;background:var(--rewardSoft);color:#9a6916;font-size:30px}.stat{margin:10px 0 0;color:var(--muted);line-height:1.55}.stat b{color:var(--accent2)}.recap{display:grid;gap:7px;margin-top:20px;text-align:left}.it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface2);color:#4f5d5a;font-size:14px}.it.sk{color:#939d9b}.ic{width:21px;height:21px;display:grid;place-items:center;border-radius:7px;background:var(--soft);color:var(--accent2);flex:0 0 auto}.fade{animation:fade .24s ease both}@keyframes fade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@media(max-width:380px){.options,.row{grid-template-columns:1fr}h1{font-size:26px}.step{font-size:24px}.panel,.card{padding:20px 15px}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="app"><main class="wrap" id="app"></main></div>
+  <script>
+    const coaches=[
+      {id:"gentle",name:"温柔陪伴",icon:"🌱",desc:"慢一点也可以，不催你"},
+      {id:"direct",name:"干脆教练",icon:"🎯",desc:"减少纠结，直接行动"},
+      {id:"hype",name:"元气助威",icon:"⚡",desc:"给你一点启动能量"}
+    ];
+    const examples=["写论文开头","整理书桌","洗澡","回复拖了很久的消息"];
+    let state={phase:"input",task:"",coach:"gentle",energy:"tiny",steps:[],cur:0,timer:null,err:""};
+    let tick=null;
+    const app=document.querySelector("#app");
+    const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+    const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+    const hasAny=(text,words)=>words.some(w=>text.includes(w));
+    function detectTaskType(task){
+      const text=task.toLowerCase();
+      if(hasAny(text,["论文","文章","报告","写作","作文","文档","ppt","幻灯片"]))return"writing";
+      if(hasAny(text,["回消息","回复","邮件","email","微信","短信","私信","消息"]))return"message";
+      if(hasAny(text,["整理","收拾","房间","桌子","书桌","衣柜","杂物"]))return"tidy";
+      if(hasAny(text,["洗澡","洗头","刷牙","护肤","出门","起床"]))return"selfcare";
+      if(hasAny(text,["学习","复习","背","刷题","看书","考试","课程","作业"]))return"study";
+      if(hasAny(text,["洗碗","洗衣","拖地","扫地","垃圾","做饭","家务"]))return"chores";
+      if(hasAny(text,["运动","跑步","健身","瑜伽","散步","锻炼"]))return"exercise";
+      if(hasAny(text,["预约","报名","缴费","报销","申请","表格","手续","账单"]))return"admin";
+      return"generic";
+    }
+    const minFor=n=>state.energy==="tiny"?Math.max(1,Math.min(5,Math.ceil(n/3))):n;
+    function localBreakdown(task){
+      const cheer={
+        gentle:["先这样就好","不用一下做完","慢慢来可以","已经在路上了","到这里就很好"],
+        direct:["就做这一步","别想后面","先推进一点","够了，下一步","收尾"],
+        hype:["开动了","这步很关键","继续有戏","你在推进","漂亮，收住"]
+      }[state.coach]||["先这样就好","不用一下做完","慢慢来可以","已经在路上了","到这里就很好"];
+      const templates={
+        writing:[
+          ["打开写作入口","打开文档、资料或作业要求。先不要写正文，只把页面摆出来。",3],
+          ["写下一个很丑的标题",`在最上面写一个临时标题，哪怕只是“${task}”。标题之后可以改。`,2],
+          ["列三个要点","只写三个短词或短句：你想说什么、需要查什么、最怕卡在哪里。",8],
+          ["写第一段的坏版本","写 3 到 5 句话，不求顺、不求准，只让文档从空白变成有东西。",12],
+          ["标出下一处要补的地方","在文末写一句“下一步补这里：___”，然后停。",3]
+        ],
+        message:[
+          ["打开那条消息","只打开对话或邮件，不急着回复。先看清对方最后一句在说什么。",2],
+          ["写一句真实开头","先写“刚看到，我来回一下”或“抱歉拖到现在”。不要发送。",2],
+          ["补一个核心信息","只回答对方最需要知道的一件事。能短就短。",5],
+          ["读一遍，删掉多余解释","把过度道歉、过度解释删一点，让它像一句正常回复。",3],
+          ["发送或定时发送","如果已经够清楚，就发出去；如果还不行，先存成草稿。",1]
+        ],
+        tidy:[
+          ["选一个小范围","只选一个位置：桌面左上角、床边、椅子上，范围越小越好。",2],
+          ["拿一个容器","拿垃圾袋、收纳盒或空纸袋。没有也行，先用一小块空地当临时区。",2],
+          ["先丢明显垃圾","只处理一眼能判断的垃圾，不做复杂分类。",5],
+          ["把同类东西放一起","书归书，衣服归衣服，线和小物先堆在同一处。先集中，不追求好看。",8],
+          ["拍一下完成区域","看一眼刚刚清出来的地方。剩下的留给下一轮。",1]
+        ],
+        selfcare:[
+          ["站起来，拿要用的东西","先去拿毛巾、衣服、牙刷或洗漱用品。只拿东西，不要求马上开始。",2],
+          ["打开水或走到浴室","让环境先动起来：开水、开灯、或站到浴室门口。",2],
+          ["做最短版本","只完成最必要的一步：冲澡、刷牙、洗脸，先不加额外流程。",8],
+          ["换上舒服的衣服","不用整理完美，先让身体舒服一点。",3],
+          ["把用过的东西放回一个地方","只收一个动作，别让收尾变成新任务。",2]
+        ],
+        study:[
+          ["打开材料","打开课本、题目、笔记或视频。先停在要看的那一页。",2],
+          ["圈出一个小目标","只选一页、一道题或一个概念。不要把整章都算进来。",3],
+          ["做五分钟粗读","先快速看一遍，遇到不会的地方只做标记，不停下来深挖。",5],
+          ["写三行自己的话","用自己的话写下刚才看懂的三点。写得乱也可以。",8],
+          ["留下下一题或下一页","把下一次要继续的位置标出来。今天这轮可以收住。",2]
+        ],
+        chores:[
+          ["把工具拿出来","先拿洗碗布、洗衣篮、扫把、垃圾袋或锅铲。工具到位就算开始。",2],
+          ["只处理最明显的一批","先拿走看得见的垃圾、脏碗、脏衣服或地上的大件。",5],
+          ["开一个短计时","做 5 到 10 分钟，到点就允许停。不要把全部家务一次打包。",8],
+          ["把完成的部分归位","只收已经处理完的东西，不打开新的区域。",4],
+          ["确认下一批是什么","看一眼还剩什么，选出下一轮的第一个动作。",1]
+        ],
+        exercise:[
+          ["换鞋或换衣服","只做装备动作，不要求马上运动。",2],
+          ["站到运动位置","走到门口、瑜伽垫旁或楼下。先让身体到位。",3],
+          ["做两分钟热身","转肩、拉伸、原地走都可以。不要追求强度。",3],
+          ["做一组最短版本","散步 5 分钟、深蹲 10 个、或跟练一个小片段。",8],
+          ["记录一句完成","写下今天做了什么。短到一句也行。",1]
+        ],
+        admin:[
+          ["打开办理入口","打开网站、App、表格或聊天窗口。先不填，只打开。",2],
+          ["确认需要哪三样东西","看一眼要求，写下需要的材料、号码或截图。",5],
+          ["先填最简单的栏","姓名、日期、电话这类确定信息先填。不会的先空着。",8],
+          ["处理一个卡点","只解决一个缺失项：找一张截图、复制一个号码、问一句确认。",8],
+          ["保存草稿或提交","能提交就提交；不能提交就保存，并写下还差什么。",2]
+        ],
+        generic:[
+          ["把任务入口摆出来",`打开、拿出或走到和“${task}”有关的东西旁边。先不要求完成。`,2],
+          ["写下最小动作","用一句话写：“我现在只要做 ___。”越具体越好。",3],
+          ["做两分钟版本","只做两分钟。到点后可以停，也可以继续。",3],
+          ["完成一个看得见的小块","只推进一个很小的部分，让它比刚才多一点点。",8],
+          ["给下一轮留提示","写下下一步从哪里接着做，别让下次重新想。",2]
+        ]
+      };
+      return templates[detectTaskType(task)].map((x,i)=>({title:x[0],how:x[1],minutes:minFor(x[2]),cheer:cheer[i]||cheer[0],status:"pending"}));
+    }
+    function head(){return `<header class="head"><div class="brand"><div class="mark">✦</div><div class="name">起<span>步</span></div></div><div class="chip">⏱ 只看下一步</div></header>`}
+    function render(){
+      clearInterval(tick); if(state.timer?.running) tick=setInterval(()=>{state.timer.remaining--; if(state.timer.remaining<=0){state.timer.remaining=0;state.timer.running=false} render()},1000);
+      if(state.phase==="input") app.innerHTML=head()+`<section class="panel fade"><h1>现在最不想开始的，是哪件事？</h1><p class="sub">不用解释原因。写个大概就行，我会先把它拆到“现在可以动一下”的程度。</p><label class="label" for="task">你卡住的事</label><textarea id="task" placeholder="比如：写期末论文、整理房间、回那封拖了三天的邮件...">${esc(state.task)}</textarea><div class="examples">${examples.map(x=>`<button class="pill" data-example="${esc(x)}">${esc(x)}</button>`).join("")}</div><div class="label">你想要哪种语气</div><div class="coaches">${coaches.map(c=>`<button class="coach ${state.coach===c.id?"on":""}" data-coach="${c.id}"><span class="ico">${c.icon}</span><span><span class="cname">${c.name}</span><span class="cdesc">${c.desc}</span></span></button>`).join("")}</div><div class="options"><button class="seg ${state.energy==="tiny"?"on":""}" data-energy="tiny">✦ 越小越好</button><button class="seg ${state.energy==="normal"?"on":""}" data-energy="normal">⏱ 正常小步</button></div><button class="primary" id="start" ${state.task.trim()?"":"disabled"}>✦ 拆成下一步</button><p class="note">小提示：按 Ctrl/⌘ + Enter 也可以开始。</p>${state.err?`<div class="err">${esc(state.err)}</div>`:""}</section>`;
+      if(state.phase==="steps"){const st=state.steps[state.cur], done=state.steps.filter(s=>s.status!=="pending").length; app.innerHTML=head()+`<section class="fade"><div class="top"><button class="back" id="reset" aria-label="重新开始">←</button><div class="prog"><div class="progt"><span>第 <b>${state.cur+1}</b> 步 / 共 ${state.steps.length} 步</span><span>${done}/${state.steps.length} 已处理</span></div><div class="bar"><i style="width:${done/state.steps.length*100}%"></i></div></div></div><article class="card"><span class="now">🎯 现在，只做这一件事</span><h2 class="step">${esc(st.title)}</h2><p class="how">${esc(st.how)}</p><div class="cheer">› <span>${esc(st.cheer)}</span></div><div class="timer">${!state.timer?`<button class="tstart" id="timer">⏱ 开始计时 · 约 ${st.minutes} 分钟</button>`:`<div class="trun"><div class="tnum ${state.timer.remaining===0?"done":""}">${state.timer.remaining===0?"时间到":fmt(state.timer.remaining)}</div>${state.timer.remaining>0?`<button class="iconbtn" id="pause">${state.timer.running?"Ⅱ":"▶"}</button>`:""}<button class="iconbtn" id="stop">■</button></div>`}</div><div class="actions"><button class="done" id="done">✓ 做完了，下一步</button><div class="row"><button class="ghost" id="split">✂ 还是动不了？再拆小</button><button class="ghost" id="skip">跳过</button></div></div></article>${state.err?`<div class="err">${esc(state.err)}</div>`:""}</section>`}
+      if(state.phase==="done"){const done=state.steps.filter(s=>s.status==="done").length; app.innerHTML=head()+`<section class="panel finish fade"><div class="pop">✦</div><h2>你已经起步了</h2><p class="stat">这一轮你完成了 <b>${done}</b> 个小步骤。能开始，就已经穿过了最难的那一秒。</p><div class="recap">${state.steps.map(s=>`<div class="it ${s.status==="skipped"?"sk":""}"><span class="ic">${s.status==="done"?"✓":"›"}</span><span>${esc(s.title)}</span></div>`).join("")}</div><button class="primary" id="reset">↻ 再开始一件事</button></section>`}
+      bind();
+    }
+    function start(){const task=state.task.trim(); if(!task)return; state={...state,phase:"steps",steps:localBreakdown(task),cur:0,timer:null,err:"现在用的是本地拆解规则。它会按任务类型变化；接上后端后还能做得更细。"}; render()}
+    function advance(status){state.steps[state.cur].status=status; state.timer=null; if(state.cur<state.steps.length-1)state.cur++; else state.phase="done"; render()}
+    function bind(){
+      const ta=document.querySelector("#task"); if(ta){ta.oninput=e=>{state.task=e.target.value; document.querySelector("#start").disabled=!state.task.trim()}; ta.onkeydown=e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter"){state.task=ta.value;start()}}}
+      document.querySelectorAll("[data-example]").forEach(b=>b.onclick=()=>{state.task=b.dataset.example;render()});
+      document.querySelectorAll("[data-coach]").forEach(b=>b.onclick=()=>{state.coach=b.dataset.coach;render()});
+      document.querySelectorAll("[data-energy]").forEach(b=>b.onclick=()=>{state.energy=b.dataset.energy;render()});
+      const q=s=>document.querySelector(s); if(q("#start"))q("#start").onclick=()=>{state.task=q("#task").value;start()}; if(q("#reset"))q("#reset").onclick=()=>{state={phase:"input",task:"",coach:state.coach,energy:state.energy,steps:[],cur:0,timer:null,err:""};render()}; if(q("#timer"))q("#timer").onclick=()=>{const st=state.steps[state.cur];state.timer={remaining:st.minutes*60,running:true};render()}; if(q("#pause"))q("#pause").onclick=()=>{state.timer.running=!state.timer.running;render()}; if(q("#stop"))q("#stop").onclick=()=>{state.timer=null;render()}; if(q("#done"))q("#done").onclick=()=>advance("done"); if(q("#skip"))q("#skip").onclick=()=>advance("skipped"); if(q("#split"))q("#split").onclick=()=>{const current=state.steps[state.cur];state.steps.splice(state.cur,1,...["先碰到它","做十秒钟版本","说出下一步"].map((title,i)=>({title,how:[`把和“${current.title}”有关的页面、物品或工具放到眼前。只做到这里。`,`只给它十秒钟。能写一个字、拿起一个东西、点开一个页面都算。`,"用一句很短的话说：我接下来只做什么。说完就够。"][i],minutes:1,cheer:["这就算开始","十秒也有效","先别加码"][i],status:"pending"})));state.timer=null;render()};
+    }
+    render();
+  </script>
+</body>
+</html>
