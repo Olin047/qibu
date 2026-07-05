@@ -14,25 +14,62 @@ function cleanTask(task) {
   return String(task || "").replace(/\s+/g, " ").trim().slice(0, 500);
 }
 
-function fallbackPlan(task, energy, minutes) {
+function clampMinutes(value) {
+  if (!Number.isFinite(Number(value))) return 25;
+  return Math.min(90, Math.max(5, Math.round(Number(value))));
+}
+
+function fitStepMinutes(steps, targetMinutes) {
+  const target = clampMinutes(targetMinutes);
+  const maxSteps = Math.min(7, target);
+  const cleanSteps = (Array.isArray(steps) && steps.length ? steps : [
+    { text: "把任务写成一句看得见的结果", minutes: 2, cue: "只写完成后的样子，不评价自己" },
+    { text: "准备开始需要的第一个材料或页面", minutes: 4, cue: "只打开，不要求马上做完" },
+    { text: "完成最小的一步", minutes: 12, cue: "小到不会让大脑想逃跑" },
+    { text: "停下来标记进度", minutes: 2, cue: "完成一格就能打卡续火花" }
+  ]).slice(0, maxSteps);
+  const base = cleanSteps.map((step) => Math.max(1, Math.round(Number(step.minutes) || 1)));
+  const current = base.reduce((total, item) => total + item, 0);
+  const scale = target / Math.max(current, 1);
+  let minutes = base.map((item) => Math.max(1, Math.round(item * scale)));
+  let diff = target - minutes.reduce((total, item) => total + item, 0);
+
+  while (diff !== 0) {
+    for (let index = minutes.length - 1; index >= 0 && diff !== 0; index -= 1) {
+      if (diff > 0) {
+        minutes[index] += 1;
+        diff -= 1;
+      } else if (minutes[index] > 1) {
+        minutes[index] -= 1;
+        diff += 1;
+      }
+    }
+  }
+
+  return cleanSteps.map((step, index) => ({
+    text: String(step.text || `完成第 ${index + 1} 个小动作`).slice(0, 90),
+    minutes: minutes[index],
+    cue: String(step.cue || "只做这一小步").slice(0, 80)
+  }));
+}
+
+function fallbackPlan(task, minutes) {
   const safeTask = cleanTask(task) || "完成今天最重要的一件小事";
-  const time = Number(minutes) || 25;
-  const lowEnergy = ["低", "很低", "疲惫"].includes(String(energy));
-  const slice = lowEnergy ? "2-5 分钟" : "5-10 分钟";
+  const target = clampMinutes(minutes);
+  const steps = fitStepMinutes(
+    [
+      { text: "把任务写成一句看得见的结果", minutes: 2, cue: "只写完成后的样子，不评价自己" },
+      { text: "准备开始需要的第一个材料或页面", minutes: 4, cue: "只打开，不要求马上做完" },
+      { text: "完成最小的一步", minutes: 12, cue: "小到不会让大脑想逃跑" },
+      { text: "停下来标记进度", minutes: 2, cue: "完成一格就能打卡续火花" }
+    ],
+    target
+  );
 
   return {
     title: safeTask,
-    starter: `先把任务缩小到一个 ${slice} 能完成的动作。`,
-    steps: [
-      { text: "把任务写成一句看得见的结果", minutes: 2, cue: "只写完成后的样子，不评价自己" },
-      { text: "准备开始需要的第一个材料或页面", minutes: 3, cue: "只打开，不要求马上做完" },
-      {
-        text: "完成最小的一步",
-        minutes: Math.min(10, Math.max(5, Math.round(time / 3))),
-        cue: "小到不会让大脑想逃跑"
-      },
-      { text: "停下来标记进度", minutes: 2, cue: "完成一格就能打卡续火花" }
-    ],
+    starter: "先把任务缩小到一个能立刻开始的动作。",
+    steps,
     reward: "完成任意一步后，给自己 3 分钟自由时间。",
     ifStuck: "如果卡住，把下一步改成“打开文件/站起来/写一个词”这种身体能直接执行的动作。"
   };
@@ -53,18 +90,14 @@ function extractJson(text) {
   return null;
 }
 
-function normalizePlan(plan, originalTask) {
-  const fallback = fallbackPlan(originalTask);
+function normalizePlan(plan, originalTask, minutes) {
+  const fallback = fallbackPlan(originalTask, minutes);
   const steps = Array.isArray(plan && plan.steps) ? plan.steps : fallback.steps;
 
   return {
     title: String((plan && plan.title) || fallback.title).slice(0, 80),
     starter: String((plan && plan.starter) || fallback.starter).slice(0, 160),
-    steps: steps.slice(0, 7).map((step, index) => ({
-      text: String(step.text || `完成第 ${index + 1} 个小动作`).slice(0, 90),
-      minutes: Number(step.minutes) || 5,
-      cue: String(step.cue || "只做这一小步").slice(0, 80)
-    })),
+    steps: fitStepMinutes(steps, minutes),
     reward: String((plan && plan.reward) || fallback.reward).slice(0, 120),
     ifStuck: String((plan && plan.ifStuck) || fallback.ifStuck).slice(0, 160)
   };
@@ -90,12 +123,13 @@ async function readPayload(req) {
 
 async function createDeepSeekPlan(payload) {
   const task = cleanTask(payload.task);
+  const minutes = clampMinutes(payload.minutes);
   const apiKey = process.env.DEEPSEEK_API_KEY;
 
   if (!apiKey) {
     return {
       source: "demo",
-      plan: normalizePlan(fallbackPlan(task, payload.energy, payload.minutes), task),
+      plan: normalizePlan(fallbackPlan(task, minutes), task, minutes),
       note: "后端未配置 DEEPSEEK_API_KEY，当前使用演示拆解。"
     };
   }
@@ -105,14 +139,13 @@ async function createDeepSeekPlan(payload) {
     "目标是降低启动阻力，不要说教，不要给过长计划。",
     "只返回 JSON，不要 Markdown。",
     "JSON 字段必须是 title, starter, steps, reward, ifStuck。",
-    "steps 是 3 到 6 个对象，每个对象包含 text, minutes, cue。"
+    "steps 是 3 到 6 个对象，每个对象包含 text, minutes, cue。",
+    "所有 steps.minutes 相加必须严格等于用户给的 availableMinutes。"
   ].join("");
 
   const userPrompt = JSON.stringify({
     task,
-    mood: payload.mood || "普通",
-    energy: payload.energy || "中",
-    availableMinutes: payload.minutes || 25,
+    availableMinutes: minutes,
     language: "简体中文"
   });
 
@@ -129,6 +162,7 @@ async function createDeepSeekPlan(payload) {
         { role: "user", content: userPrompt }
       ],
       temperature: 0.4,
+      max_tokens: 650,
       stream: false
     })
   });
@@ -145,15 +179,15 @@ async function createDeepSeekPlan(payload) {
   if (!parsed) {
     return {
       source: "fallback",
-      plan: normalizePlan(fallbackPlan(task, payload.energy, payload.minutes), task),
+      plan: normalizePlan(fallbackPlan(task, minutes), task, minutes),
       note: "AI 返回内容不是标准 JSON，已使用后端兜底拆解。"
     };
   }
 
   return {
     source: "deepseek",
-    plan: normalizePlan(parsed, task),
-    note: `由 ${MODEL} 生成`
+    plan: normalizePlan(parsed, task, minutes),
+    note: "已生成今日行动。"
   };
 }
 
@@ -182,7 +216,7 @@ module.exports = async function handler(req, res) {
     } catch (error) {
       sendJson(res, 200, {
         source: "fallback",
-        plan: normalizePlan(fallbackPlan(task, payload.energy, payload.minutes), task),
+        plan: normalizePlan(fallbackPlan(task, payload.minutes), task, payload.minutes),
         note: `${error.message || "AI 暂时不可用"}。已使用后端兜底拆解。`
       });
     }

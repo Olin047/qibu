@@ -1,4 +1,5 @@
-const STORAGE_KEY = "qibu-state-v1";
+const STORAGE_KEY = "qibu-state-v2";
+const LEGACY_STORAGE_KEY = "qibu-state-v1";
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const configuredApiBase = (window.QIBU_API_BASE || "").replace(/\/$/, "");
 const isLocalHost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -11,7 +12,6 @@ const els = {
   loginView: $("#loginView"),
   loginForm: $("#loginForm"),
   nameInput: $("#nameInput"),
-  energyInput: $("#energyInput"),
   minutesInput: $("#minutesInput"),
   dashboard: $("#dashboard"),
   todayLabel: $("#todayLabel"),
@@ -23,8 +23,6 @@ const els = {
   weekDone: $("#weekDone"),
   weekStrip: $("#weekStrip"),
   taskInput: $("#taskInput"),
-  moodSelect: $("#moodSelect"),
-  energySelect: $("#energySelect"),
   planMinutes: $("#planMinutes"),
   voiceButton: $("#voiceButton"),
   breakdownButton: $("#breakdownButton"),
@@ -32,13 +30,16 @@ const els = {
   emptyPlan: $("#emptyPlan"),
   planContent: $("#planContent"),
   planTitle: $("#planTitle"),
+  planMeta: $("#planMeta"),
   starterText: $("#starterText"),
   stepList: $("#stepList"),
   stuckText: $("#stuckText"),
   rewardText: $("#rewardText"),
   checkinButton: $("#checkinButton"),
   checkinState: $("#checkinState"),
-  resetPlanButton: $("#resetPlanButton")
+  resetPlanButton: $("#resetPlanButton"),
+  historyList: $("#historyList"),
+  celebrationLayer: $("#celebrationLayer")
 };
 
 const defaultState = {
@@ -47,19 +48,33 @@ const defaultState = {
   checkins: [],
   lastCheckin: null,
   currentPlan: null,
-  completedSteps: []
+  completedSteps: [],
+  history: [],
+  celebratedPlanId: null
 };
 
 let state = loadState();
 let recognition = null;
 let isRecording = false;
+let loadingTimer = null;
 
 function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
   try {
-    return { ...defaultState, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
+    return normalizeState({ ...defaultState, ...JSON.parse(raw || "{}") });
   } catch {
     return { ...defaultState };
   }
+}
+
+function normalizeState(nextState) {
+  return {
+    ...defaultState,
+    ...nextState,
+    checkins: Array.isArray(nextState.checkins) ? nextState.checkins : [],
+    completedSteps: Array.isArray(nextState.completedSteps) ? nextState.completedSteps : [],
+    history: Array.isArray(nextState.history) ? nextState.history : []
+  };
 }
 
 function saveState() {
@@ -73,12 +88,19 @@ function dateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-function friendlyDate() {
+function friendlyDate(date = new Date()) {
   return new Intl.DateTimeFormat("zh-CN", {
     month: "long",
     day: "numeric",
     weekday: "long"
-  }).format(new Date());
+  }).format(date);
+}
+
+function friendlyTime(date = new Date()) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
 }
 
 function greeting() {
@@ -93,6 +115,10 @@ function dayDiff(a, b) {
   const start = new Date(`${a}T00:00:00`);
   const end = new Date(`${b}T00:00:00`);
   return Math.round((end - start) / 86_400_000);
+}
+
+function sumMinutes(steps = []) {
+  return steps.reduce((total, step) => total + (Number(step.minutes) || 0), 0);
 }
 
 function recomputeStreak() {
@@ -121,7 +147,6 @@ function syncLoginView() {
   els.dashboard.classList.toggle("is-hidden", !hasUser);
 
   if (hasUser) {
-    els.energySelect.value = state.user.energy || "中";
     els.planMinutes.value = state.user.minutes || 25;
   }
 }
@@ -130,10 +155,7 @@ function renderPersonal() {
   if (!state.user) return;
   els.todayLabel.textContent = friendlyDate();
   els.personalGreeting.textContent = `${greeting()}，${state.user.name}`;
-  els.personalHint.textContent =
-    state.user.energy === "低"
-      ? "今天按低能量模式来：只找一个能在两分钟内开始的动作。"
-      : "先不用管整座山，起步只负责找到第一块石头。";
+  els.personalHint.textContent = "这是你的本机档案；别人打开网站会看到自己的记录，不会共享你的火花。";
 }
 
 function renderStreak() {
@@ -182,7 +204,10 @@ function renderPlan() {
     return;
   }
 
+  const doneCount = state.completedSteps.length;
+  const totalSteps = plan.steps.length;
   els.planTitle.textContent = plan.title;
+  els.planMeta.textContent = `${totalSteps} 步 · ${sumMinutes(plan.steps)} 分钟 · 已完成 ${doneCount}/${totalSteps}`;
   els.starterText.textContent = plan.starter;
   els.stuckText.textContent = plan.ifStuck;
   els.rewardText.textContent = plan.reward;
@@ -192,13 +217,14 @@ function renderPlan() {
     const isDone = state.completedSteps.includes(index);
     const item = document.createElement("li");
     item.className = `step-item${isDone ? " is-done" : ""}`;
+    item.style.setProperty("--step-index", index);
     item.innerHTML = `
       <button class="step-check" type="button" aria-label="完成小任务 ${index + 1}">✓</button>
       <div class="step-copy">
         <strong>${escapeHtml(step.text)}</strong>
         <span>${escapeHtml(step.cue)}</span>
       </div>
-      <span class="step-time">${Number(step.minutes) || 5} 分钟</span>
+      <span class="step-time">${Number(step.minutes) || 1} 分钟</span>
     `;
     item.querySelector("button").addEventListener("click", () => toggleStep(index));
     els.stepList.appendChild(item);
@@ -215,13 +241,27 @@ function updateCheckinButton() {
 }
 
 function toggleStep(index) {
-  if (state.completedSteps.includes(index)) {
+  const wasDone = state.completedSteps.includes(index);
+  if (wasDone) {
     state.completedSteps = state.completedSteps.filter((item) => item !== index);
   } else {
-    state.completedSteps = [...state.completedSteps, index];
+    state.completedSteps = [...state.completedSteps, index].sort((a, b) => a - b);
   }
+
+  const isAllDone = state.currentPlan && state.completedSteps.length === state.currentPlan.steps.length;
+  if (!wasDone && isAllDone) {
+    addTodayCheckin();
+    saveHistoryForPlan("complete");
+    state.celebratedPlanId = state.currentPlan.id;
+  }
+
   saveState();
-  renderPlan();
+  renderAll();
+
+  if (!wasDone && isAllDone) {
+    triggerCelebration();
+    setStatus("全部完成了，火花已点亮。");
+  }
 }
 
 function escapeHtml(value) {
@@ -241,8 +281,11 @@ async function requestBreakdown() {
     return;
   }
 
+  const minutes = clampMinutes(Number(els.planMinutes.value));
+  els.planMinutes.value = minutes;
   els.breakdownButton.disabled = true;
-  setStatus("正在拆解成更容易开始的小任务...");
+  els.breakdownButton.textContent = "拆解中...";
+  startLoadingStatus();
 
   try {
     if (API_BASE === null) {
@@ -252,12 +295,7 @@ async function requestBreakdown() {
     const response = await fetch(`${API_BASE}/api/breakdown`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        task,
-        mood: els.moodSelect.value,
-        energy: els.energySelect.value,
-        minutes: Number(els.planMinutes.value)
-      })
+      body: JSON.stringify({ task, minutes })
     });
     const data = await response.json();
 
@@ -265,62 +303,109 @@ async function requestBreakdown() {
       throw new Error(data.error || "拆解失败");
     }
 
-    applyPlan(data.plan);
-    setStatus(data.note || "已生成今日行动。");
+    applyPlan(data.plan, minutes);
+    setStatus("已生成今日行动。");
   } catch (error) {
-    applyPlan(createLocalPlan(task, els.energySelect.value, Number(els.planMinutes.value)));
-    setStatus("当前没有连接 AI 后端，已使用演示拆解。上线完整 AI 版需要再接一个后端服务。");
+    applyPlan(createLocalPlan(task, minutes), minutes);
+    setStatus("当前 AI 后端暂时没连上，已先用本地拆解。");
   } finally {
+    stopLoadingStatus();
     els.breakdownButton.disabled = false;
+    els.breakdownButton.textContent = "拆成小任务";
   }
 }
 
-function applyPlan(plan) {
-  state.currentPlan = plan;
+function startLoadingStatus() {
+  const messages = ["正在拆成更小的动作...", "正在校准总时间...", "快好了，马上给你第一步..."];
+  let index = 0;
+  setStatus(messages[index]);
+  clearInterval(loadingTimer);
+  loadingTimer = setInterval(() => {
+    index = (index + 1) % messages.length;
+    setStatus(messages[index]);
+  }, 1300);
+}
+
+function stopLoadingStatus() {
+  clearInterval(loadingTimer);
+  loadingTimer = null;
+}
+
+function applyPlan(plan, minutes) {
+  state.currentPlan = {
+    ...plan,
+    id: plan.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    steps: fitStepMinutes(plan.steps || [], minutes)
+  };
   state.completedSteps = [];
+  state.celebratedPlanId = null;
   state.user = {
     ...state.user,
-    energy: els.energySelect.value,
-    minutes: Number(els.planMinutes.value)
+    minutes
   };
   saveState();
   renderAll();
 }
 
-function createLocalPlan(task, energy, minutes) {
+function createLocalPlan(task, minutes) {
   const safeTask = task || "完成今天最重要的一件小事";
-  const time = Number(minutes) || 25;
-  const lowEnergy = energy === "低";
-  const firstSlice = lowEnergy ? 2 : 5;
+  const steps = fitStepMinutes(
+    [
+      { text: "写下完成后能看到的结果", minutes: 2, cue: "只描述结果，不要求完整" },
+      { text: "打开或拿出开始需要的第一个东西", minutes: 4, cue: "打开就算启动，不需要马上做完" },
+      { text: "完成最小的一格", minutes: 12, cue: "小到不会让自己想逃开" },
+      { text: "给刚才的进度打一个标记", minutes: 2, cue: "完成任意一步就能续上火花" }
+    ],
+    minutes
+  );
 
   return {
     title: safeTask.slice(0, 80),
-    starter: `先把它缩小成一个 ${lowEnergy ? "2 分钟" : "5 分钟"} 内能开始的动作。`,
-    steps: [
-      {
-        text: "写下完成后能看到的结果",
-        minutes: 2,
-        cue: "只描述结果，不要求完整"
-      },
-      {
-        text: "打开或拿出开始需要的第一个东西",
-        minutes: firstSlice,
-        cue: "打开就算启动，不需要马上做完"
-      },
-      {
-        text: "完成最小的一格",
-        minutes: Math.min(10, Math.max(5, Math.round(time / 3))),
-        cue: "小到不会让自己想逃开"
-      },
-      {
-        text: "给刚才的进度打一个标记",
-        minutes: 2,
-        cue: "完成任意一步就能续上火花"
-      }
-    ],
+    starter: "先把它缩小成一个能立刻开始的动作。",
+    steps,
     reward: "完成一格后，给自己 3 分钟自由时间。",
     ifStuck: "如果卡住，把下一步改成“打开页面”“写一个词”“站起来拿材料”这种身体能立刻执行的动作。"
   };
+}
+
+function clampMinutes(value) {
+  if (!Number.isFinite(value)) return 25;
+  return Math.min(90, Math.max(5, Math.round(value)));
+}
+
+function fitStepMinutes(steps, targetMinutes) {
+  const target = clampMinutes(targetMinutes);
+  const maxSteps = Math.min(7, target);
+  const fallbackSteps = [
+    { text: "写下完成后能看到的结果", minutes: 2, cue: "只描述结果，不要求完整" },
+    { text: "打开或拿出开始需要的第一个东西", minutes: 4, cue: "打开就算启动，不需要马上做完" },
+    { text: "完成最小的一格", minutes: 12, cue: "小到不会让自己想逃开" },
+    { text: "给刚才的进度打一个标记", minutes: 2, cue: "完成任意一步就能续上火花" }
+  ];
+  const cleanSteps = (steps.length ? steps : fallbackSteps).slice(0, maxSteps);
+  const base = cleanSteps.map((step) => Math.max(1, Math.round(Number(step.minutes) || 1)));
+  const current = base.reduce((total, item) => total + item, 0);
+  const scale = target / Math.max(current, 1);
+  let minutes = base.map((item) => Math.max(1, Math.round(item * scale)));
+  let diff = target - minutes.reduce((total, item) => total + item, 0);
+
+  while (diff !== 0) {
+    for (let index = minutes.length - 1; index >= 0 && diff !== 0; index -= 1) {
+      if (diff > 0) {
+        minutes[index] += 1;
+        diff -= 1;
+      } else if (minutes[index] > 1) {
+        minutes[index] -= 1;
+        diff += 1;
+      }
+    }
+  }
+
+  return cleanSteps.map((step, index) => ({
+    text: String(step.text || `完成第 ${index + 1} 个小动作`).slice(0, 90),
+    cue: String(step.cue || "只做这一小步").slice(0, 80),
+    minutes: minutes[index]
+  }));
 }
 
 function setStatus(message) {
@@ -328,6 +413,16 @@ function setStatus(message) {
 }
 
 function checkIn() {
+  const didCheckIn = addTodayCheckin();
+  if (didCheckIn) {
+    saveHistoryForPlan("checkin");
+    saveState();
+    triggerCelebration();
+  }
+  renderAll();
+}
+
+function addTodayCheckin() {
   const today = dateKey();
   if (!state.checkins.includes(today)) {
     const yesterday = dateKey(new Date(Date.now() - 86_400_000));
@@ -337,17 +432,75 @@ function checkIn() {
     }
     state.checkins = [...state.checkins, today];
     recomputeStreak();
-    saveState();
+    return true;
   }
-  renderAll();
+  return false;
+}
+
+function saveHistoryForPlan(reason) {
+  if (!state.currentPlan) return;
+  const planId = state.currentPlan.id;
+  if (state.history.some((item) => item.planId === planId)) return;
+
+  const now = new Date();
+  state.history = [
+    {
+      planId,
+      title: state.currentPlan.title,
+      date: now.toISOString(),
+      dateKey: dateKey(now),
+      time: friendlyTime(now),
+      minutes: sumMinutes(state.currentPlan.steps),
+      completedCount: state.completedSteps.length,
+      totalSteps: state.currentPlan.steps.length,
+      reason,
+      steps: state.currentPlan.steps.map((step) => step.text)
+    },
+    ...state.history
+  ].slice(0, 30);
+}
+
+function renderHistory() {
+  if (!els.historyList) return;
+  if (!state.history.length) {
+    els.historyList.innerHTML = `<p class="empty-history">完成一次任务后，这里会留下记录。</p>`;
+    return;
+  }
+
+  els.historyList.innerHTML = state.history
+    .slice(0, 8)
+    .map((item) => {
+      const date = new Date(item.date);
+      return `
+        <article class="history-item">
+          <div>
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${friendlyDate(date)} · ${item.time || friendlyTime(date)}</span>
+          </div>
+          <span class="history-time">${item.completedCount}/${item.totalSteps} · ${item.minutes} 分钟</span>
+        </article>
+      `;
+    })
+    .join("");
 }
 
 function resetPlan() {
   state.currentPlan = null;
   state.completedSteps = [];
+  state.celebratedPlanId = null;
   saveState();
   renderPlan();
   setStatus("已清空。可以重新输入一个更想开始的任务。");
+}
+
+function triggerCelebration() {
+  els.celebrationLayer.classList.remove("is-active");
+  window.requestAnimationFrame(() => {
+    els.celebrationLayer.classList.add("is-active");
+  });
+  window.setTimeout(() => {
+    els.celebrationLayer.classList.remove("is-active");
+  }, 1500);
 }
 
 function setupVoice() {
@@ -402,13 +555,13 @@ function renderAll() {
   renderPersonal();
   renderStreak();
   renderPlan();
+  renderHistory();
 }
 
 els.loginForm.addEventListener("submit", (event) => {
   event.preventDefault();
   state.user = {
     name: els.nameInput.value.trim(),
-    energy: els.energyInput.value,
     minutes: Number(els.minutesInput.value)
   };
   saveState();

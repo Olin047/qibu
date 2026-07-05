@@ -163,6 +163,7 @@ h1 {
 .task-panel,
 .plan-panel,
 .habit-panel,
+.history-panel,
 .checkin-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -445,7 +446,8 @@ textarea:focus {
   grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.15fr);
   grid-template-areas:
     "task plan"
-    "habit plan";
+    "habit plan"
+    "history plan";
   gap: 18px;
   align-items: start;
 }
@@ -463,9 +465,14 @@ textarea:focus {
   grid-area: habit;
 }
 
+.history-panel {
+  grid-area: history;
+}
+
 .task-panel,
 .plan-panel,
-.habit-panel {
+.habit-panel,
+.history-panel {
   padding: 20px;
 }
 
@@ -485,7 +492,7 @@ textarea:focus {
 
 .control-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.8fr;
+  grid-template-columns: minmax(140px, 0.45fr);
   gap: 10px;
   margin: 12px 0;
 }
@@ -524,6 +531,20 @@ textarea:focus {
   font-weight: 700;
 }
 
+.plan-meta {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 12px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--blue-ink);
+  background: var(--blue);
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
 .step-list {
   display: grid;
   gap: 10px;
@@ -533,6 +554,7 @@ textarea:focus {
 }
 
 .step-item {
+  position: relative;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 10px;
@@ -541,11 +563,16 @@ textarea:focus {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
 }
 
 .step-item.is-done {
   border-color: #b9e5cc;
   background: #f4fcf7;
+  animation: step-pop 260ms ease;
 }
 
 .step-check {
@@ -558,12 +585,18 @@ textarea:focus {
   background: #fff;
   color: transparent;
   font-weight: 900;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
 }
 
 .step-item.is-done .step-check {
   color: #fff;
   border-color: var(--mint-ink);
   background: var(--mint-ink);
+  transform: scale(1.06);
 }
 
 .step-copy {
@@ -571,9 +604,34 @@ textarea:focus {
 }
 
 .step-copy strong {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
   display: block;
   margin-bottom: 4px;
   line-height: 1.4;
+}
+
+.step-copy strong::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52%;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--mint-ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms ease;
+}
+
+.step-item.is-done .step-copy strong {
+  color: #657064;
+}
+
+.step-item.is-done .step-copy strong::after {
+  transform: scaleX(1);
 }
 
 .step-copy span {
@@ -663,6 +721,167 @@ textarea:focus {
   color: var(--ink);
 }
 
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.history-item div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.history-item strong {
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.history-item span,
+.empty-history {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.history-time {
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--orange-dark) !important;
+  background: rgba(251, 141, 50, 0.13);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.empty-history {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f7efe7;
+  line-height: 1.55;
+}
+
+.celebration-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+}
+
+.celebration-layer.is-active {
+  animation: celebration-fade 1400ms ease both;
+}
+
+.celebration-flame {
+  width: 86px;
+  height: 86px;
+  border-radius: 70% 30% 60% 40%;
+  background: linear-gradient(140deg, #ffd36a, var(--orange) 55%, #f15a24);
+  box-shadow: 0 20px 45px rgba(251, 141, 50, 0.36);
+  transform: rotate(45deg) scale(0.5);
+}
+
+.celebration-layer.is-active .celebration-flame {
+  animation: flame-burst 900ms ease both;
+}
+
+.spark {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffd36a;
+  opacity: 0;
+}
+
+.celebration-layer.is-active .spark {
+  animation: spark-fly 900ms ease both;
+}
+
+.spark-one {
+  --tx: -92px;
+  --ty: -82px;
+}
+
+.spark-two {
+  --tx: 102px;
+  --ty: -74px;
+  background: #fb8d32;
+}
+
+.spark-three {
+  --tx: -112px;
+  --ty: 58px;
+  background: #d7f2e3;
+}
+
+.spark-four {
+  --tx: 118px;
+  --ty: 66px;
+}
+
+@keyframes step-pop {
+  0% {
+    transform: scale(1);
+  }
+  55% {
+    transform: scale(1.018);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes celebration-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  12%,
+  78% {
+    opacity: 1;
+  }
+}
+
+@keyframes flame-burst {
+  0% {
+    transform: rotate(45deg) scale(0.5);
+  }
+  45% {
+    transform: rotate(45deg) scale(1.16);
+  }
+  100% {
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+@keyframes spark-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(1);
+  }
+}
+
 @media (max-width: 900px) {
   .login-view,
   .workspace-grid {
@@ -673,7 +892,8 @@ textarea:focus {
     grid-template-areas:
       "task"
       "plan"
-      "habit";
+      "habit"
+      "history";
   }
 
   .brand-column {

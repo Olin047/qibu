@@ -26,14 +26,6 @@
             <input id="nameInput" autocomplete="name" placeholder="比如：小林" required />
           </label>
           <label>
-            <span>今天的能量</span>
-            <select id="energyInput">
-              <option>低</option>
-              <option selected>中</option>
-              <option>高</option>
-            </select>
-          </label>
-          <label>
             <span>想用几分钟起步</span>
             <input id="minutesInput" type="number" min="5" max="90" step="5" value="25" />
           </label>
@@ -90,23 +82,6 @@
 
             <div class="control-row">
               <label>
-                <span>心情</span>
-                <select id="moodSelect">
-                  <option>平静</option>
-                  <option selected>有点乱</option>
-                  <option>焦虑</option>
-                  <option>还不错</option>
-                </select>
-              </label>
-              <label>
-                <span>能量</span>
-                <select id="energySelect">
-                  <option>低</option>
-                  <option selected>中</option>
-                  <option>高</option>
-                </select>
-              </label>
-              <label>
                 <span>时间</span>
                 <input id="planMinutes" type="number" min="5" max="90" step="5" value="25" />
               </label>
@@ -131,6 +106,7 @@
             </div>
 
             <div class="plan-content is-hidden" id="planContent">
+              <div class="plan-meta" id="planMeta"></div>
               <p class="starter-text" id="starterText"></p>
               <ol class="step-list" id="stepList"></ol>
               <div class="mini-note">
@@ -163,9 +139,27 @@
             </div>
             <div class="week-strip" id="weekStrip" aria-label="本周打卡"></div>
           </section>
+
+          <section class="history-panel" aria-labelledby="historyTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">历史</p>
+                <h3 id="historyTitle">完成过的任务</h3>
+              </div>
+            </div>
+            <div class="history-list" id="historyList"></div>
+          </section>
         </div>
       </section>
     </main>
+
+    <div class="celebration-layer" id="celebrationLayer" aria-hidden="true">
+      <span class="celebration-flame"></span>
+      <span class="spark spark-one"></span>
+      <span class="spark spark-two"></span>
+      <span class="spark spark-three"></span>
+      <span class="spark spark-four"></span>
+    </div>
 
     <script src="config.js"></script>
     <script src="app.js"></script>
