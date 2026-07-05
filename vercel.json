@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/breakdown.js": {
+      "runtime": "nodejs22.x"
+    }
+  },
   "cleanUrls": true,
   "headers": [
     {
