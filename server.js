@@ -35,7 +35,12 @@ function loadDotEnv(filePath) {
 }
 
 function sendJson(res, status, data) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  });
   res.end(JSON.stringify(data));
 }
 
@@ -220,6 +225,11 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
+  if (req.method === "OPTIONS" && req.url === "/api/breakdown") {
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
   if (req.method === "POST" && req.url === "/api/breakdown") {
     try {
       const raw = await readBody(req);
