@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>起步 | ADHD 任务启动助手</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="login-view" id="loginView" aria-labelledby="loginTitle">
+        <div class="brand-column">
+          <img src="/assets/qibu-logo.png" alt="起步 logo" class="hero-logo" />
+          <div>
+            <p class="eyebrow">起步</p>
+            <h1 id="loginTitle">把“开始”变成一小步</h1>
+            <p class="hero-copy">面向 ADHD 启动困难：语音说出大任务，AI 帮你拆成今天能动起来的小动作。</p>
+          </div>
+        </div>
+
+        <form class="login-panel" id="loginForm">
+          <label>
+            <span>昵称</span>
+            <input id="nameInput" autocomplete="name" placeholder="比如：小林" required />
+          </label>
+          <label>
+            <span>今天的能量</span>
+            <select id="energyInput">
+              <option>低</option>
+              <option selected>中</option>
+              <option>高</option>
+            </select>
+          </label>
+          <label>
+            <span>想用几分钟起步</span>
+            <input id="minutesInput" type="number" min="5" max="90" step="5" value="25" />
+          </label>
+          <button class="primary-button" type="submit">进入我的起步页</button>
+        </form>
+      </section>
+
+      <section class="dashboard is-hidden" id="dashboard" aria-live="polite">
+        <header class="topbar">
+          <div class="brand-lockup">
+            <img src="/assets/qibu-logo.png" alt="" class="nav-logo" />
+            <div>
+              <strong>起步</strong>
+              <span id="todayLabel">今日</span>
+            </div>
+          </div>
+          <div class="top-actions">
+            <div class="spark-badge" title="连续打卡火花">
+              <span class="flame-shape" aria-hidden="true"></span>
+              <span><b id="streakCount">0</b> 天</span>
+            </div>
+            <button class="ghost-button" id="logoutButton" type="button">退出</button>
+          </div>
+        </header>
+
+        <section class="welcome-band">
+          <div>
+            <p class="eyebrow" id="personalGreeting">早上好</p>
+            <h2>今天只需要完成一个小动作</h2>
+            <p id="personalHint">先把脑子里的大块头放到这里，剩下交给起步。</p>
+          </div>
+          <div class="checkin-panel">
+            <span>今日状态</span>
+            <strong id="checkinState">还未打卡</strong>
+            <button class="primary-button compact" id="checkinButton" type="button" disabled>完成一步后打卡</button>
+          </div>
+        </section>
+
+        <div class="workspace-grid">
+          <section class="task-panel" aria-labelledby="taskTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">任务拆解</p>
+                <h3 id="taskTitle">说出或写下一个大任务</h3>
+              </div>
+              <button class="icon-button" id="voiceButton" type="button" title="语音输入" aria-label="语音输入">
+                <span class="mic-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <textarea id="taskInput" rows="5" placeholder="例如：我想开始写毕业论文开题报告，但是不知道从哪一步开始"></textarea>
+
+            <div class="control-row">
+              <label>
+                <span>心情</span>
+                <select id="moodSelect">
+                  <option>平静</option>
+                  <option selected>有点乱</option>
+                  <option>焦虑</option>
+                  <option>还不错</option>
+                </select>
+              </label>
+              <label>
+                <span>能量</span>
+                <select id="energySelect">
+                  <option>低</option>
+                  <option selected>中</option>
+                  <option>高</option>
+                </select>
+              </label>
+              <label>
+                <span>时间</span>
+                <input id="planMinutes" type="number" min="5" max="90" step="5" value="25" />
+              </label>
+            </div>
+
+            <button class="primary-button" id="breakdownButton" type="button">拆成小任务</button>
+            <p class="status-line" id="statusLine">准备好了。输入任务后，我会把它拆到能开始的粒度。</p>
+          </section>
+
+          <section class="plan-panel" aria-labelledby="planTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">今日行动</p>
+                <h3 id="planTitle">你的第一步会出现在这里</h3>
+              </div>
+              <button class="ghost-button" id="resetPlanButton" type="button">清空</button>
+            </div>
+
+            <div class="empty-plan" id="emptyPlan">
+              <span class="flame-large" aria-hidden="true"></span>
+              <p>把任务缩小后，只要完成任意一格，就可以点亮今日火花。</p>
+            </div>
+
+            <div class="plan-content is-hidden" id="planContent">
+              <p class="starter-text" id="starterText"></p>
+              <ol class="step-list" id="stepList"></ol>
+              <div class="mini-note">
+                <strong>卡住时</strong>
+                <span id="stuckText"></span>
+              </div>
+              <div class="mini-note">
+                <strong>完成奖励</strong>
+                <span id="rewardText"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="habit-panel" aria-labelledby="habitTitle">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">火花记录</p>
+                <h3 id="habitTitle">保持连续，不追求完美</h3>
+              </div>
+            </div>
+            <div class="streak-meter">
+              <div>
+                <span>连续天数</span>
+                <strong id="streakBig">0</strong>
+              </div>
+              <div>
+                <span>本周完成</span>
+                <strong id="weekDone">0/7</strong>
+              </div>
+            </div>
+            <div class="week-strip" id="weekStrip" aria-label="本周打卡"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
