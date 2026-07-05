@@ -72,6 +72,62 @@ button {
   box-shadow: var(--shadow);
 }
 
+.logo-tile {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: var(--orange);
+}
+
+.logo-arrow,
+.logo-arrow::before,
+.logo-arrow::after {
+  position: absolute;
+  display: block;
+  background: #fff;
+  border-radius: 999px;
+}
+
+.logo-arrow {
+  width: 14%;
+  height: 46%;
+  left: 50%;
+  bottom: 20%;
+  transform: translateX(-50%);
+}
+
+.logo-arrow::before,
+.logo-arrow::after {
+  content: "";
+  width: 230%;
+  height: 22%;
+  top: -5%;
+}
+
+.logo-arrow::before {
+  left: 50%;
+  transform: translateX(-94%) rotate(-48deg);
+  transform-origin: right center;
+}
+
+.logo-arrow::after {
+  right: 50%;
+  transform: translateX(94%) rotate(48deg);
+  transform-origin: left center;
+}
+
+.logo-tile::after {
+  content: "";
+  position: absolute;
+  width: 58%;
+  height: 9%;
+  left: 21%;
+  top: 58%;
+  border-radius: 999px;
+  background: #fff;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--orange-dark);
