@@ -137,11 +137,12 @@ async function createDeepSeekPlan(payload) {
   const systemPrompt = [
     "你是一个面向 ADHD 启动困难用户的任务拆解助手。",
     "目标是降低启动阻力，不要说教，不要给过长计划。",
-    "只返回 JSON，不要 Markdown。",
+    "只返回严格 json，不要 Markdown。",
     "JSON 字段必须是 title, starter, steps, reward, ifStuck。",
     "steps 是 3 到 6 个对象，每个对象包含 text, minutes, cue。",
-    "所有 steps.minutes 相加必须严格等于用户给的 availableMinutes。"
-  ].join("");
+    "所有 steps.minutes 相加必须严格等于用户给的 availableMinutes。",
+    "示例 json：{\"title\":\"整理书桌\",\"starter\":\"先清出一小块空间。\",\"steps\":[{\"text\":\"拿走桌上的杯子\",\"minutes\":2,\"cue\":\"只拿杯子\"}],\"reward\":\"休息三分钟。\",\"ifStuck\":\"只做第一步。\"}"
+  ].join("\n");
 
   const userPrompt = JSON.stringify({
     task,
@@ -161,6 +162,7 @@ async function createDeepSeekPlan(payload) {
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
+      response_format: { type: "json_object" },
       temperature: 0.4,
       max_tokens: 650,
       stream: false
@@ -180,7 +182,7 @@ async function createDeepSeekPlan(payload) {
     return {
       source: "fallback",
       plan: normalizePlan(fallbackPlan(task, minutes), task, minutes),
-      note: "AI 返回内容不是标准 JSON，已使用后端兜底拆解。"
+      note: "AI 暂时没有返回稳定结构，已使用兜底拆解。"
     };
   }
 
@@ -217,7 +219,7 @@ module.exports = async function handler(req, res) {
       sendJson(res, 200, {
         source: "fallback",
         plan: normalizePlan(fallbackPlan(task, payload.minutes), task, payload.minutes),
-        note: `${error.message || "AI 暂时不可用"}。已使用后端兜底拆解。`
+        note: "AI 暂时不可用，已使用兜底拆解。"
       });
     }
   } catch (error) {

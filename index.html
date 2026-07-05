@@ -21,6 +21,11 @@
         </div>
 
         <form class="login-panel" id="loginForm">
+          <button class="google-button is-hidden" id="googleLoginButton" type="button">
+            <span class="google-mark" aria-hidden="true">G</span>
+            使用 Google 登录
+          </button>
+          <p class="auth-hint" id="authModeHint">当前使用本机档案保存记录。</p>
           <label>
             <span>昵称</span>
             <input id="nameInput" autocomplete="name" placeholder="比如：小林" required />
@@ -162,6 +167,7 @@
     </div>
 
     <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
   </body>
 </html>

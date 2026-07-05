@@ -65,3 +65,51 @@ http://localhost:5173
 - `ALLOWED_ORIGIN`，可选，建议填 GitHub Pages 地址
 
 如果把整个项目部署到 Vercel，网页会自动调用同域的 `/api/breakdown`。如果继续使用 GitHub Pages 前端，把 `config.js` 里的 `window.QIBU_API_BASE` 改成 Vercel 后端地址即可。
+
+## Google 登录和数据库
+
+推荐使用 Supabase Auth + Supabase Postgres。创建 Supabase 项目后：
+
+1. 在 Supabase Auth 里开启 Google provider。
+2. 把 GitHub Pages 地址加入允许跳转 URL：
+
+```text
+https://olin047.github.io/qibu/
+```
+
+3. 在 SQL Editor 里执行：
+
+```sql
+create table if not exists public.qibu_user_state (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.qibu_user_state enable row level security;
+
+create policy "Users can read their own qibu state"
+on public.qibu_user_state
+for select
+using (auth.uid() = user_id);
+
+create policy "Users can insert their own qibu state"
+on public.qibu_user_state
+for insert
+with check (auth.uid() = user_id);
+
+create policy "Users can update their own qibu state"
+on public.qibu_user_state
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
+4. 把 `config.js` 里的配置填上：
+
+```js
+window.QIBU_SUPABASE_URL = "你的 Supabase Project URL";
+window.QIBU_SUPABASE_ANON_KEY = "你的 Supabase anon public key";
+```
+
+`anon public key` 可以公开放在前端，真正的数据隔离依赖 RLS policy。

@@ -5,12 +5,16 @@ const configuredApiBase = (window.QIBU_API_BASE || "").replace(/\/$/, "");
 const isLocalHost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const isGithubPages = location.hostname.endsWith("github.io");
 const API_BASE = configuredApiBase || (isLocalHost || !isGithubPages ? "" : null);
+const SUPABASE_URL = window.QIBU_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = window.QIBU_SUPABASE_ANON_KEY || "";
 
 const $ = (selector) => document.querySelector(selector);
 
 const els = {
   loginView: $("#loginView"),
   loginForm: $("#loginForm"),
+  googleLoginButton: $("#googleLoginButton"),
+  authModeHint: $("#authModeHint"),
   nameInput: $("#nameInput"),
   minutesInput: $("#minutesInput"),
   dashboard: $("#dashboard"),
@@ -57,6 +61,12 @@ let state = loadState();
 let recognition = null;
 let isRecording = false;
 let loadingTimer = null;
+let supabaseClient = null;
+let currentSession = null;
+let cloudSaveTimer = null;
+let isHydratingCloud = false;
+
+const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
 
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -79,6 +89,7 @@ function normalizeState(nextState) {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  queueCloudSave();
 }
 
 function dateKey(date = new Date()) {
@@ -145,6 +156,10 @@ function syncLoginView() {
   const hasUser = Boolean(state.user && state.user.name);
   els.loginView.classList.toggle("is-hidden", hasUser);
   els.dashboard.classList.toggle("is-hidden", !hasUser);
+  els.googleLoginButton.classList.toggle("is-hidden", !isSupabaseConfigured);
+  els.authModeHint.textContent = isSupabaseConfigured
+    ? "Google 登录后，记录会保存到你的云端档案。"
+    : "当前使用本机档案保存记录；配置 Supabase 后可开启 Google 登录。";
 
   if (hasUser) {
     els.planMinutes.value = state.user.minutes || 25;
@@ -155,7 +170,9 @@ function renderPersonal() {
   if (!state.user) return;
   els.todayLabel.textContent = friendlyDate();
   els.personalGreeting.textContent = `${greeting()}，${state.user.name}`;
-  els.personalHint.textContent = "这是你的本机档案；别人打开网站会看到自己的记录，不会共享你的火花。";
+  els.personalHint.textContent = currentSession
+    ? "这是你的 Google 云端档案；记录会跟着账号走，不会和别人共享。"
+    : "这是你的本机档案；别人打开网站会看到自己的记录，不会共享你的火花。";
 }
 
 function renderStreak() {
@@ -568,8 +585,26 @@ els.loginForm.addEventListener("submit", (event) => {
   renderAll();
 });
 
-els.logoutButton.addEventListener("click", () => {
-  state.user = null;
+els.googleLoginButton.addEventListener("click", async () => {
+  if (!supabaseClient) {
+    setStatus("还没有配置 Supabase，暂时只能使用本机档案。");
+    return;
+  }
+
+  await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.href.split("#")[0]
+    }
+  });
+});
+
+els.logoutButton.addEventListener("click", async () => {
+  if (supabaseClient && currentSession) {
+    await supabaseClient.auth.signOut();
+  }
+  currentSession = null;
+  state = { ...defaultState };
   saveState();
   renderAll();
 });
@@ -581,3 +616,80 @@ els.resetPlanButton.addEventListener("click", resetPlan);
 
 setupVoice();
 renderAll();
+initAuth();
+
+async function initAuth() {
+  if (!isSupabaseConfigured) return;
+
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data } = await supabaseClient.auth.getSession();
+  await handleAuthSession(data.session);
+
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    await handleAuthSession(session);
+  });
+}
+
+async function handleAuthSession(session) {
+  currentSession = session || null;
+  if (!session) {
+    renderAll();
+    return;
+  }
+
+  const googleUser = session.user;
+  const profileUser = {
+    name: googleUser.user_metadata && googleUser.user_metadata.full_name
+      ? googleUser.user_metadata.full_name
+      : googleUser.email || "起步用户",
+    email: googleUser.email || "",
+    avatar: googleUser.user_metadata && googleUser.user_metadata.avatar_url
+      ? googleUser.user_metadata.avatar_url
+      : "",
+    minutes: state.user && state.user.minutes ? state.user.minutes : 25
+  };
+
+  isHydratingCloud = true;
+  const { data, error } = await supabaseClient
+    .from("qibu_user_state")
+    .select("state")
+    .eq("user_id", googleUser.id)
+    .maybeSingle();
+
+  if (!error && data && data.state) {
+    state = normalizeState({
+      ...defaultState,
+      ...data.state,
+      user: {
+        ...profileUser,
+        ...(data.state.user || {})
+      }
+    });
+  } else {
+    state = normalizeState({
+      ...state,
+      user: profileUser
+    });
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  isHydratingCloud = false;
+  renderAll();
+  queueCloudSave(true);
+}
+
+function queueCloudSave(immediate = false) {
+  if (!supabaseClient || !currentSession || isHydratingCloud) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(saveCloudState, immediate ? 0 : 550);
+}
+
+async function saveCloudState() {
+  if (!supabaseClient || !currentSession) return;
+
+  await supabaseClient.from("qibu_user_state").upsert({
+    user_id: currentSession.user.id,
+    state,
+    updated_at: new Date().toISOString()
+  });
+}

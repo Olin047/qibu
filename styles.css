@@ -177,6 +177,42 @@ h1 {
   padding: 24px;
 }
 
+.google-button {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid #dfd0c1;
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fff;
+  font-weight: 900;
+}
+
+.google-button:hover {
+  background: #f7efe7;
+}
+
+.google-mark {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #4285f4;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.auth-hint {
+  margin: -8px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
 label {
   display: grid;
   gap: 8px;
@@ -373,10 +409,26 @@ textarea:focus {
 
 .flame-shape,
 .flame-large {
+  position: relative;
   display: inline-block;
-  border-radius: 70% 30% 60% 40%;
-  background: linear-gradient(140deg, #ffd36a, var(--orange) 60%, #f15a24);
-  transform: rotate(45deg);
+  border-radius: 52% 48% 54% 46% / 64% 62% 38% 36%;
+  background: linear-gradient(145deg, #ffd36a 0%, var(--orange) 50%, #f15a24 100%);
+  clip-path: polygon(50% 0%, 66% 21%, 82% 38%, 91% 62%, 78% 88%, 50% 100%, 22% 88%, 9% 62%, 18% 38%, 34% 21%);
+  transform: none;
+  box-shadow: inset -4px -8px 12px rgba(177, 57, 10, 0.18);
+}
+
+.flame-shape::after,
+.flame-large::after {
+  content: "";
+  position: absolute;
+  left: 39%;
+  bottom: 14%;
+  width: 28%;
+  height: 44%;
+  border-radius: 56% 44% 54% 46% / 66% 66% 34% 34%;
+  background: linear-gradient(180deg, #fff3a9, #ffd36a);
+  clip-path: polygon(50% 0%, 72% 36%, 66% 78%, 50% 100%, 31% 78%, 27% 36%);
 }
 
 .flame-shape {
@@ -786,12 +838,26 @@ textarea:focus {
 }
 
 .celebration-flame {
+  position: relative;
   width: 86px;
   height: 86px;
-  border-radius: 70% 30% 60% 40%;
+  border-radius: 52% 48% 54% 46% / 64% 62% 38% 36%;
   background: linear-gradient(140deg, #ffd36a, var(--orange) 55%, #f15a24);
+  clip-path: polygon(50% 0%, 66% 21%, 82% 38%, 91% 62%, 78% 88%, 50% 100%, 22% 88%, 9% 62%, 18% 38%, 34% 21%);
   box-shadow: 0 20px 45px rgba(251, 141, 50, 0.36);
-  transform: rotate(45deg) scale(0.5);
+  transform: scale(0.5);
+}
+
+.celebration-flame::after {
+  content: "";
+  position: absolute;
+  left: 37%;
+  bottom: 13%;
+  width: 30%;
+  height: 45%;
+  border-radius: 56% 44% 54% 46% / 66% 66% 34% 34%;
+  background: linear-gradient(180deg, #fff3a9, #ffd36a);
+  clip-path: polygon(50% 0%, 72% 36%, 66% 78%, 50% 100%, 31% 78%, 27% 36%);
 }
 
 .celebration-layer.is-active .celebration-flame {
@@ -858,13 +924,13 @@ textarea:focus {
 
 @keyframes flame-burst {
   0% {
-    transform: rotate(45deg) scale(0.5);
+    transform: scale(0.5);
   }
   45% {
-    transform: rotate(45deg) scale(1.16);
+    transform: scale(1.16);
   }
   100% {
-    transform: rotate(45deg) scale(1);
+    transform: scale(1);
   }
 }
 
