@@ -55,3 +55,13 @@ http://localhost:5173
 这个仓库已经包含 `.github/workflows/pages.yml`。推送到 GitHub 的 `main` 分支后，GitHub Actions 会把 `public/` 目录发布到 GitHub Pages。
 
 注意：GitHub Pages 只能托管静态文件，不能安全保存 DeepSeek API key。公开给别人用 AI 功能时，需要再部署一个后端或 serverless function，然后在前端配置 `window.QIBU_API_BASE` 指向那个后端。
+
+## 真实 AI 后端
+
+项目包含 Vercel Serverless 接口 `api/breakdown.js`。在 Vercel 配置这些环境变量后，接口会安全调用 DeepSeek：
+
+- `DEEPSEEK_API_KEY`
+- `DEEPSEEK_MODEL`，默认 `deepseek-v4-flash`
+- `ALLOWED_ORIGIN`，可选，建议填 GitHub Pages 地址
+
+如果把整个项目部署到 Vercel，网页会自动调用同域的 `/api/breakdown`。如果继续使用 GitHub Pages 前端，把 `config.js` 里的 `window.QIBU_API_BASE` 改成 Vercel 后端地址即可。

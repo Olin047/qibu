@@ -1,7 +1,9 @@
 const STORAGE_KEY = "qibu-state-v1";
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const configuredApiBase = (window.QIBU_API_BASE || "").replace(/\/$/, "");
-const API_BASE = configuredApiBase || (location.hostname === "localhost" || location.hostname === "127.0.0.1" ? "" : null);
+const isLocalHost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const isGithubPages = location.hostname.endsWith("github.io");
+const API_BASE = configuredApiBase || (isLocalHost || !isGithubPages ? "" : null);
 
 const $ = (selector) => document.querySelector(selector);
 
